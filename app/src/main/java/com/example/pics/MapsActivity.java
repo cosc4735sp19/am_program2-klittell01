@@ -5,6 +5,7 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.provider.MediaStore;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -19,16 +20,25 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
+import java.util.Arrays;
+
+public class MapsActivity extends FragmentActivity implements OnMapReadyCallback , GoogleMap.OnMarkerClickListener {
 
     boolean canLocate = false;
     private GoogleMap mMap;
     final public static int MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION =1;
     static final int REQUEST_IMAGE_CAPTURE = 1;
     Activity act = this;
+    Bitmap imageBitmap;
+    String numStr = "0";
+    int numInt = 0;
+
+    Bitmap thePics[] = new Bitmap[100];
 
 
     @Override
@@ -57,6 +67,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                             MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
 
                 }
+                else {
+                    LaunchCamera();
+                }
             }
         });
     }
@@ -65,6 +78,34 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
             startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
+        }
+    }
+
+    void DropMarker(){
+
+        mMap.setOnMarkerClickListener(this);
+        numStr = String.valueOf(numInt);
+        Log.d("dropping", "a deuce");
+        LatLng latLng = new LatLng(1,2);
+        MarkerOptions options =  new MarkerOptions()
+                .position(latLng)
+                .title(numStr)
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE));
+        mMap.addMarker(options);
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
+            Bundle extras = data.getExtras();
+            imageBitmap = (Bitmap) extras.get("data");
+            numInt++;
+
+            Log.d("hmm", "title" + numInt);
+            thePics[numInt] = imageBitmap;
+            DropMarker();
+            //imageView.setImageBitmap(imageBitmap);
         }
     }
 
@@ -106,10 +147,23 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+    }
 
-        // Add a marker in Sydney and move the camera
-        LatLng sydney = new LatLng(-34, 151);
-        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+    @Override
+    public boolean onMarkerClick(Marker marker) {
+        Log.d("we", "click but we dont fuck");
+        String titleStr = marker.getTitle();
+        int titleInt = Integer.parseInt(titleStr);
+
+
+        MarkerOptions options =  new MarkerOptions()
+                .position(marker.getPosition())
+                .icon(BitmapDescriptorFactory.fromBitmap(thePics[titleInt]));
+
+        marker.remove();
+        mMap.addMarker(options);
+
+
+        return false;
     }
 }
