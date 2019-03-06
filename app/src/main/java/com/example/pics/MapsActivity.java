@@ -3,7 +3,9 @@ package com.example.pics;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.provider.MediaStore;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
@@ -25,7 +27,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     boolean canLocate = false;
     private GoogleMap mMap;
     final public static int MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION =1;
+    static final int REQUEST_IMAGE_CAPTURE = 1;
     Activity act = this;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,29 +44,28 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Here's a Snackbar", Snackbar.LENGTH_LONG)
+                Snackbar.make(view, "Say no and you lose out big time!", Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
 
                 // Here, thisActivity is the current activity
-                if (ContextCompat.checkSelfPermission(getApplicationContext(),
-                        Manifest.permission.ACCESS_FINE_LOCATION)
-                        != PackageManager.PERMISSION_GRANTED) {
-
-
-
-                    // Permission is not granted
-
-                        // No explanation needed; request the permission
+                if (ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)
+                {
+                    // Permissions not granted
+                    // No explanation needed; request the permission
                     ActivityCompat.requestPermissions(act,
                                 new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                             MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
 
-                        // MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
-                        // app-defined int constant. The callback method gets the
-                        // result of the request.
                 }
             }
         });
+    }
+
+    void LaunchCamera(){
+        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+            startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
+        }
     }
 
     @Override
@@ -77,6 +80,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                     canLocate = true;
 
+                    // Launch camera
+                    LaunchCamera();
+
                 } else {
 
                     // permission denied, boo! Disable the
@@ -84,9 +90,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 }
                 return;
             }
-
-            // other 'case' lines to check for other
-            // permissions this app might request
         }
     }
 
