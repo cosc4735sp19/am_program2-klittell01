@@ -14,7 +14,10 @@ import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -27,8 +30,10 @@ import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.util.Arrays;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback , GoogleMap.OnMarkerClickListener {
+public class MapsActivity extends FragmentActivity implements OnMapReadyCallback,
+        GoogleMap.OnMarkerClickListener {
 
+    private View popup = null;
     boolean canLocate = false;
     private GoogleMap mMap;
     final public static int MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION =1;
@@ -157,6 +162,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 
         MarkerOptions options =  new MarkerOptions()
+                .title(titleStr)
                 .position(marker.getPosition())
                 .icon(BitmapDescriptorFactory.fromBitmap(thePics[titleInt]));
 
