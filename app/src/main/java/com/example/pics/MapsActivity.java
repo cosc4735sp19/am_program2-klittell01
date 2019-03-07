@@ -6,6 +6,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.location.Location;
 import android.provider.MediaStore;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -19,6 +20,8 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -27,12 +30,15 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.OnSuccessListener;
 
 import java.util.Arrays;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback,
         GoogleMap.OnMarkerClickListener {
 
+
+    private FusedLocationProviderClient fusedLocationClient;
     private View popup = null;
     boolean canLocate = false;
     private GoogleMap mMap;
@@ -42,6 +48,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     Bitmap imageBitmap;
     String numStr = "0";
     int numInt = 0;
+    double lat = 6, lng = 9;
 
     Bitmap thePics[] = new Bitmap[100];
 
@@ -55,6 +62,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -80,6 +88,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     void LaunchCamera(){
+        fusedLocationClient.getLastLocation()
+            .addOnSuccessListener(this, new OnSuccessListener<Location>() {
+                @Override
+                public void onSuccess(Location location) {
+                    // Got last known location. In some rare situations this can be null.
+                    if (location != null) {
+                        Log.d("lat:", "is" + location.getLatitude());
+                        Log.d("lng:", "is" + location.getLongitude());
+                        lat = location.getLatitude();
+                        lng = location.getLongitude();
+                    }
+                }
+            });
         Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
             startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
@@ -88,11 +109,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     void DropMarker(){
 
+        LatLng latLng;
+
+        latLng = new LatLng(lat, lng);
         mMap.setOnMarkerClickListener(this);
         numStr = String.valueOf(numInt);
-        Log.d("dropping", "a deuce");
-        LatLng latLng = new LatLng(1,2);
         MarkerOptions options =  new MarkerOptions()
+                .snippet("mark")
                 .position(latLng)
                 .title(numStr)
                 .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE));
@@ -156,18 +179,29 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     public boolean onMarkerClick(Marker marker) {
-        Log.d("we", "click but we dont fuck");
         String titleStr = marker.getTitle();
         int titleInt = Integer.parseInt(titleStr);
 
+        if (marker.getSnippet().equals("mark")) {
+            MarkerOptions options = new MarkerOptions()
+                    .title(titleStr)
+                    .snippet("icon")
+                    .position(marker.getPosition())
+                    .icon(BitmapDescriptorFactory.fromBitmap(thePics[titleInt]));
 
-        MarkerOptions options =  new MarkerOptions()
-                .title(titleStr)
-                .position(marker.getPosition())
-                .icon(BitmapDescriptorFactory.fromBitmap(thePics[titleInt]));
+            marker.remove();
+            mMap.addMarker(options);
+        } else {
+            MarkerOptions options = new MarkerOptions()
+                    .snippet("mark")
+                    .title(titleStr)
+                    .position(marker.getPosition())
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE));
 
-        marker.remove();
-        mMap.addMarker(options);
+            marker.remove();
+            mMap.addMarker(options);
+        }
+
 
 
         return false;
